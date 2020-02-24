@@ -1,0 +1,31 @@
+{
+    "num_itr": 5000,
+    "num_trials": 200,
+    "num_policy_eval": 10,
+    "num_cpu": 10,
+    "num_gpu": 1,
+    "grad_method": "utility",
+    "num_fit": 1,
+    "lr": 1,
+    "reg_include": true,
+    "reg_method": "McAllester",
+    "reg_grad_wt": 0.1,
+    "load": true,
+    "save_file_v": "pac_batch",
+    "eps_shared": false,
+    "server_list": [],
+    "time_step": 0.01,
+    "itr_start": 1,
+    "start_seed": 10,
+    "image_size": 50,
+    "num_prims": 20,
+    "input_max": 20,
+    "prim_horizon": 100,
+    "comp_len": 5,
+    "_comment": "alpha is the convex combination factor between collision and goal cost",
+    "alpha": 1.0,
+    "h_lim": [
+        0.0,
+        0.1
+    ]
+}
