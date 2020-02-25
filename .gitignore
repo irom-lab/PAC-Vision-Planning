@@ -2,11 +2,14 @@
 .idea/
 Minitaur/__pycache__/
 Quadrotor/__pycache__/
+Consolidated/__pycache__/
 .DS_Store
 Quadrotor/runs/
 Minitaur/runs/
+Consolidated/runs/
 run_backup/
 Quadrotor/optim_state/
 Minitaur/optim_state/
+Consolidated/optim_state/
 *.avi
 *.mp4
