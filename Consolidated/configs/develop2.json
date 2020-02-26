@@ -8,7 +8,6 @@
     "grad_method": "ES",
     "lr_mu": 1,
     "lr_logvar": 0.01,
-    "load_prior": false,
     "load_prior_from": "less_obs_large_roll",
     "load_weights": true,
     "load_weights_from": "develop2_current",
@@ -38,5 +37,6 @@
     "x_min": -5,
     "x_max": 5,
     "cost_min": 0.12460251152515411,
-    "reg_include": false
+    "reg_include": false,
+    "load_prior": false
 }

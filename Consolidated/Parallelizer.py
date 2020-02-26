@@ -120,11 +120,10 @@ class Compute_Loss:
         comp_len = params['comp_len']
         prim_horizon = params['prim_horizon']
         num_policy_eval = params['num_policy_eval']
-        safecircle = params['safecircle']
         alpha = params['alpha']
         grad_method = params['grad_method']
 
-        from Simulator import Simulator
+        from envs.Quad_Simulator import Simulator
         from ES_grad import compute_grad_ES
 
         '''import pybullet results in printing "pybullet build time: XXXX" for
@@ -136,7 +135,7 @@ class Compute_Loss:
         os.dup2(null_fds[0], 1)
         os.dup2(null_fds[1], 2)
 
-        from envs.Quad_Env import TestEnvironment
+        from envs.Quad_Env import Environment
 
         # ENABLE PRINTING
         os.dup2(save[0], 1)
@@ -157,7 +156,7 @@ class Compute_Loss:
             p.data = torch.ones_like(p.data)
         DepthFilter = DepthFilter.to(device)
         
-        env = TestEnvironment(r_lim, num_obs, safecircle=safecircle, parallel=True,
+        env = Environment(r_lim, num_obs, parallel=True,
                           gui=False, y_max=y_max, y_min=y_min, x_min=x_min, x_max=x_max)
         sim = Simulator(comp_len=comp_len, prim_horizon=prim_horizon, alpha=alpha, 
                         dt=time_step, t_horizon=t_horizon, device=device)  # new env for this thread to use

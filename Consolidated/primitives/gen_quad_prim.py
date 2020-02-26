@@ -217,20 +217,6 @@ if __name__ == '__main__':
     dt = params['time_step']
     T = params['prim_horizon'] * dt
     
-    # end_points = gen_end_points(x_min=-1, x_max=1, z_min=-1, 
-    #                         z_max=1, num_x_points=5, num_z_points=5)
-    # x_path, y_path, z_path = gen_path(x0=0, y0=0, z0=0, dx=end_points[0,0], 
-    #                                   dz=end_points[0,1], vy=1, T=0.5, steps=1000)
-    # x_traj, y_traj, z_traj, thetax_traj, thetay_traj, thetaz_traj, v = gen_traj(
-    #                                                                    x_path, 
-    #                                                                    y_path, 
-    #                                                                    z_path, 
-    #                                                                    T=0.5, 
-    #                                                                    dt=0.05)
-    # print(x_traj)
-    # print(y_traj)
-    # print(z_traj)
-    
     prim_lib_x_traj, prim_lib_y_traj, prim_lib_z_traj, prim_lib_x_acc, prim_lib_y_acc, prim_lib_z_acc, prim_lib_v = gen_prim_lib(
                                                 x_min=-1, x_max=1, z_min=-1, z_max=1, num_x_points=5, num_z_points=5, dt=dt, T=T)
     

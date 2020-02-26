@@ -22,7 +22,7 @@
     "time_step": 0.02,
     "speed": 40,
     "goal": 6,
-    "itr_start": 5,
+    "itr_start": 4,
     "start_seed": 0,
     "image_size": 50,
     "num_prims": 20,
@@ -33,5 +33,5 @@
     "_comment": "alpha is the convex combination factor between collision and goal cost",
     "alpha": 0.2,
     "delta": 0.01,
-    "cost_min": 0.4637743830680847
+    "cost_min": 0.5140641927719116
 }

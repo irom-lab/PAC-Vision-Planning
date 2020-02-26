@@ -12,7 +12,6 @@ import pybullet
 import pybullet_utils.bullet_client as bc
 import pybullet_data
 import numpy as np
-import time
 
 # ENABLE PRINTING
 os.dup2(save[0], 1)
@@ -32,8 +31,7 @@ class Environment:
         self.num_obs = num_obs
 
         # Set goal for this environment
-        self.xG = np.array([[0.,15.]])
-        # self.xG = (np.random.rand(1,2) -0.5)*[20,0]+ [0.,10.]
+        self.yG = 15
 
         self.x_lim = [x_min, x_max]
         self.y_lim = [y_min, y_max]
@@ -123,44 +121,6 @@ class Environment:
         
         return obsUid
 
-    def generate_obstacles_sub(self, p, posObs, colIdxs):
-        numObs = self.num_obs
-        heightObs = self.height_obs
-        rmin = self.r_lim[0]
-        rmax = self.r_lim[1]
-        xmin = self.x_lim[0]
-        xmax = self.x_lim[1]
-        ymin = self.y_lim[0]
-        ymax = self.y_lim[1]
-
-        for obs in range(numObs):  # Cylindrical obstacles
-            posObs_obs = np.array([None] * 3)
-            posObs_obs[0] = xmin + (xmax - xmin) * np.random.random_sample(1)
-            posObs_obs[1] = ymin + (ymax - ymin) * np.random.random_sample(1)
-            posObs_obs[2] = 0  # set z at ground level
-            posObs[obs] = posObs_obs
-            radiusObs = rmin + (rmax - rmin) * np.random.random_sample(1)
-            colIdxs[obs] = p.createCollisionShape(p.GEOM_CYLINDER, radius=radiusObs, height=heightObs)
-
-        return posObs, colIdxs
-    
-    def generate_safe_initial_env(self, min_dist=1.0):
-        gen_obs_flag = True
-        while gen_obs_flag:
-            self.obsUid = self.generate_obstacles()
-            closest_points = self.p.getClosestPoints(self.quadrotor, self.obsUid, min_dist)
-            if not closest_points:
-                gen_obs_flag = False
-            else:
-                self.p.removeBody(self.obsUid)
-
-class TestEnvironment(Environment):
-
-    def __init__(self, r_lim, num_obs, parallel=False, gui=False, x_min=-5.0, x_max=5.0, y_min=0.0, y_max=10.0, safecircle=2.):
-        Environment.__init__(self, r_lim, num_obs, parallel, gui, x_min, x_max, y_min, y_max)
-        self.safecircle = safecircle
-        # self.obsUid = self.generate_obstacles()
-
     def generate_obstacles_sub(self, p, posObs, colIdxs, visIdxs):
         numObs = self.num_obs
         heightObs = self.height_obs
@@ -240,3 +200,14 @@ class TestEnvironment(Environment):
                                                rgbaColor=cylinder_color)
 
         return posObs, colIdxs, visIdxs
+
+    
+    def generate_safe_initial_env(self, min_dist=1.0):
+        gen_obs_flag = True
+        while gen_obs_flag:
+            self.obsUid = self.generate_obstacles()
+            closest_points = self.p.getClosestPoints(self.quadrotor, self.obsUid, min_dist)
+            if not closest_points:
+                gen_obs_flag = False
+            else:
+                self.p.removeBody(self.obsUid)

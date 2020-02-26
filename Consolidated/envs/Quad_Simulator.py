@@ -3,8 +3,6 @@
 import numpy as np
 import torch
 import math
-import time
-from gen_prim import gen_path, gen_traj, gen_acc
 
 RENDER_HEIGHT = 360*4
 RENDER_WIDTH = 480*4
@@ -18,13 +16,13 @@ class Simulator:
         self.device = device
         self.alpha = alpha
         self.dt = dt
-        self.prim_lib_x_traj = np.load('primitives/prim_lib_x_traj.npy')
-        self.prim_lib_y_traj = np.load('primitives/prim_lib_y_traj.npy')
-        self.prim_lib_z_traj = np.load('primitives/prim_lib_z_traj.npy')
-        self.prim_lib_v = np.load('primitives/prim_lib_v.npy')
-        self.prim_lib_x_acc = np.load('primitives/prim_lib_x_acc.npy')
-        self.prim_lib_y_acc = np.load('primitives/prim_lib_y_acc.npy')
-        self.prim_lib_z_acc = np.load('primitives/prim_lib_z_acc.npy')
+        self.prim_lib_x_traj = np.load('quad_primitive_lib/prim_lib_x_traj.npy')
+        self.prim_lib_y_traj = np.load('quad_primitive_lib/prim_lib_y_traj.npy')
+        self.prim_lib_z_traj = np.load('quad_primitive_lib/prim_lib_z_traj.npy')
+        self.prim_lib_v = np.load('quad_primitive_lib/prim_lib_v.npy')
+        self.prim_lib_x_acc = np.load('quad_primitive_lib/prim_lib_x_acc.npy')
+        self.prim_lib_y_acc = np.load('quad_primitive_lib/prim_lib_y_acc.npy')
+        self.prim_lib_z_acc = np.load('quad_primitive_lib/prim_lib_z_acc.npy')
 
     def simulate_controller(self, env, policy, DepthFilter, gen_new_env=True, 
                             rem_old_env=True, RealTimeSim=False, image_size=50, 
@@ -82,8 +80,6 @@ class Simulator:
             
         if record_vid:
             import cv2
-            # videoObj = cv2.VideoWriter('video'+str(vid_num)+'.avi', cv2.VideoWriter_fourcc('M','J','P','G'),
-                                       # 20, (RENDER_WIDTH, RENDER_HEIGHT))
             videoObj = cv2.VideoWriter('video'+str(vid_num)+'.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
                                        20, (RENDER_WIDTH, RENDER_HEIGHT))
 
@@ -95,7 +91,6 @@ class Simulator:
         
         cost = 0.  # cost of image, if we've crashed, can adjust radius
         traj = [state, state]
-        # time.sleep(5)
 
         for i in range(self.comp_len):
             
@@ -155,8 +150,6 @@ class Simulator:
 
                     if record_vid:
                         
-                        # w, h, view_matrix, proj_matrix = env.p.getDebugVisualizerCamera()[0:4]
-                        
                         view_matrix = env.p.computeViewMatrixFromYawPitchRoll(
                                                         cameraTargetPosition=[state[0], state[1], state[2]],
                                                         distance=3.0,
@@ -183,14 +176,7 @@ class Simulator:
                         cv2.waitKey(1)
                         videoObj.write(cv2.cvtColor(np.uint8(rgb), cv2.COLOR_RGB2BGR))
                         
-                        # sphere = env.p.loadURDF("./URDFs/Sphere/sphere2red.urdf", 
-                        #                         basePosition=state,
-                        #                         baseOrientation=env.p.getQuaternionFromEuler([0., 0., np.pi/4]),
-                        #                         useFixedBase=1,
-                        #                         globalScaling=0.02)  # Load robot from URDF                    
-
-                        
-                goal_cost = 1. - np.abs(state[1]-1)/15.
+                goal_cost = 1. - np.abs(state[1]-1)/env.yG
                
                 # Get closest points
                 contact_points_obj = env.p.getClosestPoints(env.quadrotor, obs_uid, 0.0)
@@ -288,7 +274,7 @@ class Simulator:
                         self.plot_traj(env.p, traj)
 
                         
-                goal_cost = 1. - np.abs(state[1]-1)/15.
+                goal_cost = 1. - np.abs(state[1]-1)/env.yG
                
                 # Get closest points
                 contact_points_obj = env.p.getClosestPoints(env.quadrotor, obs_uid, 0.0)
@@ -303,127 +289,6 @@ class Simulator:
 
         return cost, collision_cost, goal_cost
 
-    
-    def generate_image_data(self, policy, env, image_size=50):
-        '''Executes the neural network policy'''
-
-        # Sample environment
-        obs_uid = env.obsUid
-
-        # Initialize position of robot
-        state = env.init_position
-        quat = env.init_orientation
-
-        env.p.resetBasePositionAndOrientation(env.quadrotor, [state[0], state[1], state[2]], quat)
-        
-        cost = 0.  # cost of image, if we've crashed, can adjust radius
-        depth_data = []
-
-        for i in range(self.comp_len):
-            
-            _, depth = self.mount_cam(env, state, quat, h=image_size, w=image_size)
-            depth_data.append(np.array(depth))
-            depth_tensor = torch.Tensor(depth).view([1, 1, image_size, image_size])
-
-            assert depth_tensor.nelement()!=0,"Tensor is empty."
-            pd = policy(depth_tensor.to(self.device))[0]
-            prim = pd.max(0)[1].to(self.device).item()
-            x_traj, y_traj, z_traj = self.compute_primtive_traj(prim_id=prim, 
-                                                                x0=state[0], 
-                                                                y0=state[1], 
-                                                                z0=state[2])
-
-            for t in range(self.prim_horizon):
-                
-                state = [x_traj[t], y_traj[t], z_traj[t]]
-                
-                # Update position of pybullet object
-                quat = env.p.getQuaternionFromEuler([0., 0., np.pi/4])
-                env.p.resetBasePositionAndOrientation(env.quadrotor, [state[0], state[1], state[2]], quat)
-                
-                if env.gui:
-                    env.p.resetDebugVisualizerCamera(cameraDistance=3.0,
-                                                      cameraYaw=0.0,
-                                                      cameraPitch=-30.0,
-                                                      cameraTargetPosition=[state[0], state[1], state[2]])
-                        
-                goal_cost = 1. - np.abs(state[1]-1)/15.
-               
-                # Get closest points
-                contact_points_obj = env.p.getClosestPoints(env.quadrotor, obs_uid, 0.0)
-                contact_points_ground = env.p.getClosestPoints(env.quadrotor, env.ground, 0.0)
-                collision_cost = (1-(i*self.prim_horizon + t)/(self.comp_len*self.prim_horizon-1))
-                cost = self.alpha * collision_cost + (1-self.alpha) * goal_cost
-
-                # If collision, then remove obstacles and return the cost
-                if contact_points_obj or contact_points_ground:
-                    return cost, collision_cost, goal_cost, depth_data
-
-        return cost, collision_cost, goal_cost, depth_data
-    
-    def generate_image_data_filter(self, DepthFilter, env, image_size=50):
-        '''Executes the neural network policy'''
-
-        # Sample environment
-        obs_uid = env.obsUid
-
-        # Initialize position of robot
-        state = env.init_position
-        quat = env.init_orientation
-
-        env.p.resetBasePositionAndOrientation(env.quadrotor, [state[0], state[1], state[2]], quat)
-        
-        cost = 0.  # cost of image, if we've crashed, can adjust radius
-        depth_data = []
-        prim_labels = []
-
-        for i in range(self.comp_len):
-            
-            _, depth = self.mount_cam(env, state, quat, h=image_size, w=image_size)
-            depth_data.append(np.array(depth))
-            depth_tensor = torch.Tensor(depth).view([1, 1, image_size, image_size])
-
-            assert depth_tensor.nelement()!=0,"Tensor is empty."
-            filtered_depth = DepthFilter(depth_tensor.to(self.device))[0]
-            filtered_depth = filtered_depth.view(1,-1)
-            index = filtered_depth.max(1).indices
-            r = int(index/5)
-            c = int(index%5)
-            prim = int(np.abs(r-4)+5*c)
-            prim_labels.append(prim)
-            x_traj, y_traj, z_traj = self.compute_primtive_traj(prim_id=prim, 
-                                                                x0=state[0], 
-                                                                y0=state[1], 
-                                                                z0=state[2])
-
-            for t in range(self.prim_horizon):
-                
-                state = [x_traj[t], y_traj[t], z_traj[t]]
-                
-                # Update position of pybullet object
-                quat = env.p.getQuaternionFromEuler([0., 0., np.pi/4])
-                env.p.resetBasePositionAndOrientation(env.quadrotor, [state[0], state[1], state[2]], quat)
-                
-                if env.gui:
-                    env.p.resetDebugVisualizerCamera(cameraDistance=3.0,
-                                                      cameraYaw=0.0,
-                                                      cameraPitch=-30.0,
-                                                      cameraTargetPosition=[state[0], state[1], state[2]])
-                        
-                goal_cost = 1. - np.abs(state[1]-1)/15.
-               
-                # Get closest points
-                contact_points_obj = env.p.getClosestPoints(env.quadrotor, obs_uid, 0.0)
-                contact_points_ground = env.p.getClosestPoints(env.quadrotor, env.ground, 0.0)
-                collision_cost = (1-(i*self.prim_horizon + t)/(self.comp_len*self.prim_horizon-1))
-                cost = self.alpha * collision_cost + (1-self.alpha) * goal_cost
-
-                # If collision, then remove obstacles and return the cost
-                # if contact_points_obj or contact_points_ground:
-                #     return cost, collision_cost, goal_cost, depth_data, prim_labels
-
-        return cost, collision_cost, goal_cost, depth_data, prim_labels
-    
     def visualize_prims(self, prim, env, gen_new_env, rem_old_env, image_size=50):
         '''Executed the neural network policy'''
 
@@ -433,12 +298,6 @@ class Simulator:
         # initial_heading = [0., 1., -0.2]
         quat = env.p.getQuaternionFromEuler([0., 0., np.pi/4])
         
-
-        # Rotated vectors
-        # camera_vector = rot_matrix.dot(init_camera_vector)
-        # up_vector = rot_matrix.dot(init_up_vector)
-
-
         # ############################################
         # Must match with mount_cam
         
@@ -606,32 +465,3 @@ class Simulator:
         depth = np.reshape(depth, (w, h))
 
         return rgb, depth
-
-    def mount_360_cam(self, env, base_p, base_o, w=50, h=50):
-        '''
-        Mounts an RGB-D camera on a robot in pybullet
-        Parameters
-        ----------
-        w : Width
-        h : Height
-        base_p : Base position
-        base_o : Base orientation as a quaternion
-        Returns
-        -------
-        rgb : RGB image
-        depth : Depth map
-        '''
-
-        es = env.p.getEulerFromQuaternion(base_o)
-
-        forward = base_o
-        left = env.p.getQuaternionFromEuler([es[0], es[1], es[2]+np.pi/2])
-        right = env.p.getQuaternionFromEuler([es[0], es[1], es[2]-np.pi/2])
-        back = env.p.getQuaternionFromEuler([es[0], es[1], es[2]-np.pi])
-
-        rbg_f, depth_f = self.mount_cam(env, base_p, forward, w, h)
-        rbg_l, depth_l = self.mount_cam(env, base_p, left, w, h)
-        rbg_r, depth_r = self.mount_cam(env, base_p, right, w, h)
-        rbg_b, depth_b = self.mount_cam(env, base_p, back, w, h)
-
-        return (rbg_f, rbg_l, rbg_b, rbg_r), (depth_f, depth_l, depth_b, depth_r)

@@ -55,27 +55,14 @@ class train:
         self.num_params = sum(p.numel() for p in self.policy.parameters())
         print('Number of Neural Network Parameters:', self.num_params)
 
-        # Establish prior
-        if self.load_prior:
-            self.mu_pr = torch.load('Weights/mu_'+str(self.load_prior_from)+'_best.pt')['0']
-            self.logvar_pr = torch.load('Weights/logvar_'+str(self.load_prior_from)+'_best.pt')['0']
-            self.logvar_pr = torch.log(self.logvar_pr.exp()*4)
-        else:            
-            self.mu_pr = torch.zeros(self.num_params)
-            self.logvar_pr = torch.log(torch.ones(self.num_params)*4)
-
         # Initialize the posterior distribution
-        self.mu = nn.ParameterList([nn.Parameter(torch.randn(self.num_params))])
-        self.logvar = nn.ParameterList([nn.Parameter(torch.randn(self.num_params))])
+        self.mu = nn.ParameterList([nn.Parameter(torch.zeros(self.num_params))])
+        self.logvar = nn.ParameterList([nn.Parameter(torch.log(torch.ones(self.num_params)*4))])
 
         if self.load_weights is True:
             # Load posterior distribution from file
             self.mu.load_state_dict(torch.load('Weights/mu_'+str(self.load_weights_from)+'.pt'))
             self.logvar.load_state_dict(torch.load('Weights/logvar_'+str(self.load_weights_from)+'.pt'))
-        else:
-            # Use the prior as the posterior
-            self.mu = nn.ParameterList([nn.Parameter(self.mu_pr.clone())])
-            self.logvar = nn.ParameterList([nn.Parameter(self.logvar_pr.clone())])
 
         # Initialize the gradients, by default they are set to None
         self.mu.grad = torch.randn_like(self.mu[0])

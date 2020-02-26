@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 
 class Compute_Loss:
 
-    def __init__(self, num_trials, num_cpu=1, num_gpu=1, start_seed=0, multi_server=False):
+    def __init__(self, num_trials, num_cpu=1, num_gpu=1, start_seed=0):
         # self.cores = mp.cpu_count()
         self.cores = num_cpu
         self.batch = [0 for _ in range(self.cores)]  # give each core the correct number of processes + data
@@ -22,13 +22,11 @@ class Compute_Loss:
         self.num_trials = num_trials
         self.num_gpu = num_gpu
         self.start_seed = start_seed
-        self.multi_server = multi_server
 
     def compute(self, itr_num, params, mu, std, mu_pr, logvar_pr, reg_include):
 
         # Need this start_method for parallelizing Pytorch models
         mp.set_start_method('forkserver', force=True)
-        delta = params['delta']
         process = []
         batch = self.batch
         manager = mp.Manager()
