@@ -13,30 +13,15 @@ if len(sys.argv)>2:
     delete = sys.argv[2]
 else:
     delete = '0'
-if len(sys.argv)>3:
-    pac = sys.argv[3]
-else:
-    pac = '0'
 
 args={}
 args = json.load(open(sys.argv[1]))
 
-if pac == '1':
-    args['itr_start'] = 0
-    args['load_prior'] = True
-    args['load_weights'] = False
-    args['load_weights_from'] = args['load_prior_from']+'_best'
-    args['load_optimizer'] = False
-    args['reg_include'] = True
-    args['cost_min'] = 100.0
-    
-else:
-    args['itr_start'] = 0
-    args['load_prior'] = False
-    args['load_weights'] = False
-    args['load_optimizer'] = False
-    args['reg_include'] = False
-    args['cost_min'] = 100.0
+args['itr_start'] = 0
+args['load_prior'] = False
+args['load_weights'] = False
+args['load_optimizer'] = False
+args['cost_min'] = 100.0
 
 json.dump(args, open(sys.argv[1], 'w'), indent=4)
 

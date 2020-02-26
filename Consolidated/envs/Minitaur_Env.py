@@ -11,10 +11,9 @@ os.dup2(null_fds[1], 2)
 import numpy as np
 from pybullet_envs.minitaur.envs import minitaur_gym_env
 import math
-from policy import Policy
+from policy.minitaur_policy import Policy
 import torch
 import warnings
-import time
 warnings.filterwarnings('ignore')
 
 # Set the initial position
@@ -55,7 +54,7 @@ class Environment:
         self.p = self.minitaur_env._pybullet_client
         # self.minitaur_env.minitaur.SetFootFriction(1.0)
         # self.minitaur_env.minitaur.SetFootRestitution(0.1)
-        self.prim_lib = np.load('prim_lib.npy')
+        # self.prim_lib = np.load('prim_lib.npy')
         # textureId = self.p.loadTexture("heightmaps/table.png")
         # self.p.changeVisualShape(self.minitaur_env.ground_id, -1, textureUniqueId=textureId)
         self.terraintextureId = self.p.loadTexture("heightmaps/oak-wood.png")
@@ -210,8 +209,8 @@ class Environment:
            
         return posObs, orientObs, colIdxs, visIdxs
 
-    def _get_bounding_amplitude(self, prim):
-        return self.prim_lib[prim]
+    # def _get_bounding_amplitude(self, prim):
+    #     return self.prim_lib[prim]
 
 
     def execute_policy(self, policy, goal, alpha, time_step=0.01, speed=40, comp_len=10, prim_horizon=50, 

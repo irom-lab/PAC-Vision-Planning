@@ -12,10 +12,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from policy.quad_policy import Policy as Policy
 import json
 import sys
-from Parallelizer.Quad_Parallelizer import Compute_Loss
+from Parallelizer import Compute_Loss
 from visualize import weight_spread
 warnings.filterwarnings('ignore')
 
@@ -27,6 +26,7 @@ class train:
         self.params = args
 
         # Initialize
+        self.example = args['example']
         self.num_trials = args['num_trials']
         self.num_itr = args['num_itr']
         self.num_cpu = args['num_cpu']
@@ -43,6 +43,12 @@ class train:
         self.load_prior = args['load_prior']
         self.load_prior_from = args['load_prior_from']
         self.logging = args['logging']
+        
+        # import policy based on the example
+        if self.example == 'quadrotor':
+            from policy.quad_policy import Policy
+        elif self.example == 'minitaur':
+            from policy.minitaur_policy import Policy
 
         # Generate policy
         self.policy = Policy()
@@ -138,9 +144,7 @@ class train:
             emp_cost, grad_mu, grad_logvar = para.compute(i,
                                                           self.params,
                                                           mu.clone().detach(),
-                                                          (0.5*logvar).exp().clone().detach(),
-                                                          self.mu_pr.clone().detach(),
-                                                          self.logvar_pr.clone().detach())
+                                                          (0.5*logvar).exp().clone().detach())
 
             
             # Compute gradient norms

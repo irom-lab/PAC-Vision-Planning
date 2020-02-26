@@ -1,4 +1,5 @@
 {
+    "example": "quadrotor",
     "num_itr": 5000,
     "num_trials": 10,
     "num_policy_eval": 50,
