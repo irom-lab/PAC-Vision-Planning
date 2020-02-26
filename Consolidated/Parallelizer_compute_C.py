@@ -184,3 +184,80 @@ class Compute_Cost_Matrix:
         # Return the all costs in the batch
         rd['all_emp_costs'+str(proc_num)] = all_emp_costs
         env.p.disconnect()  # clean up instance
+        
+    @staticmethod
+    def minitaur_thread(params, nets, device, mu, std, batch_size, np_seed, 
+                         torch_seed, rd, proc_num):
+        image_size = params['image_size']
+        max_angle = params['max_angle']
+        comp_len = params['comp_len']
+        prim_horizon = params['prim_horizon']
+        num_policy_eval = params['num_policy_eval']
+        alpha = params['alpha']
+        goal = params['goal']
+        time_step = params['time_step']
+        policy = nets[0]
+
+        '''import pybullet results in printing "pybullet build time: XXXX" for
+        each process. The code below suppresses printing these messages.
+        Source: https://stackoverflow.com/a/978264'''
+        # SUPPRESS PRINTING
+        null_fds = [os.open(os.devnull, os.O_RDWR) for x in range(2)]
+        save = os.dup(1), os.dup(2)
+        os.dup2(null_fds[0], 1)
+        os.dup2(null_fds[1], 2)
+
+        from envs.Minitaur_Env import Environment 
+
+        # ENABLE PRINTING
+        os.dup2(save[0], 1)
+        os.dup2(save[1], 2)
+        os.close(null_fds[0])
+        os.close(null_fds[1])
+
+        # creating objects
+        policy_eval_costs = torch.zeros(num_policy_eval)
+        all_emp_costs = torch.zeros(batch_size, num_policy_eval)
+
+        env = Environment(max_angle=max_angle, gui=False)
+
+        # Generate epsilons in here and compute multiple runs for the same environment
+        for i in range(batch_size):
+            torch.manual_seed(torch_seed[i])
+            epsilon = torch.randn((num_policy_eval, mu.numel()))
+            if i>0:
+                env.p.removeBody(env.terrain)
+            env.goal = goal
+            np.random.seed(np_seed[i])
+            env.terrain = env.generate_steps()
+
+            for j in range(num_policy_eval):
+                # reset the robot back to starting point after each trial
+                env.minitaur_env.reset()
+                policy_params = mu + std*epsilon[j,:]
+
+                policy_params = policy_params.to(device)
+
+                # LOAD POLICY_PARAMS
+                count = 0
+                for p in policy.parameters():
+                    num_params_p = p.data.numel()
+                    p.data = policy_params[count:count+num_params_p].view(p.data.shape)
+                    count+=num_params_p
+
+                cost, collision_cost, goal_cost, _ = env.execute_policy(policy,
+                                                                     env.goal,
+                                                                     alpha,
+                                                                     time_step=time_step,
+                                                                     comp_len=comp_len,
+                                                                     prim_horizon=prim_horizon,
+                                                                     image_size=image_size,
+                                                                     device=device)
+                
+                policy_eval_costs[j] = torch.Tensor([cost])
+
+            all_emp_costs[i] = policy_eval_costs
+
+        # Return the sum of all costs in the batch
+        rd['all_emp_costs'+str(proc_num)] = all_emp_costs
+        env.p.disconnect()  # clean up instance
