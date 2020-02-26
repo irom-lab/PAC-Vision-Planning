@@ -12,10 +12,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from policy import Policy as Policy
+from policy.quad_policy import Policy as Policy
 import json
 import sys
-from Parallelizer import Compute_Loss
+from Parallelizer.Quad_Parallelizer import Compute_Loss
 from visualize import weight_spread
 warnings.filterwarnings('ignore')
 

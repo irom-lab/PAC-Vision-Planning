@@ -3,15 +3,14 @@
 import multiprocessing as mp
 import numpy as np
 import torch
-from policy import Policy, Filter
+from policy.quad_policy import Policy, Filter
 import os
-import time
 import warnings
 warnings.filterwarnings('ignore')
 
 class Compute_Loss:
 
-    def __init__(self, num_trials, num_cpu=1, num_gpu=1, start_seed=0, multi_server=False):
+    def __init__(self, num_trials, num_cpu=1, num_gpu=1, start_seed=0):
         # self.cores = mp.cpu_count()
         self.cores = num_cpu
         self.batch = [0 for _ in range(self.cores)]  # give each core the correct number of processes + data
@@ -20,7 +19,6 @@ class Compute_Loss:
         self.num_trials = num_trials
         self.num_gpu = num_gpu
         self.start_seed = start_seed
-        self.multi_server = multi_server
 
     def compute(self, itr_num, params, mu, std, mu_pr, logvar_pr):
 
@@ -49,8 +47,8 @@ class Compute_Loss:
             # Generate seeds at random with no regard to repeatability
             # torch_seed = [self.new_seed() for i in range(batch[j])]
             
-            # Note: Do not use this with multiserver, otherwise epsilons will repeat
-            #       across servers
+            # Generate the same seeds for every instance of training for comparison
+            # of hyperparameters; the seeds differ with the iteration number.
             torch_seed = list(range(itr_num*self.num_trials + torch_pos, 
                                     itr_num*self.num_trials + torch_pos + batch[j]))
 
@@ -69,34 +67,19 @@ class Compute_Loss:
         # Collect the epsilons along with cost (how to keep them separate from other environments?)
         grad_mu = torch.zeros(mu.numel())
         grad_logvar = torch.zeros(std.numel())
-        reg_grad_mu = torch.zeros(mu.numel())
-        reg_grad_logvar = torch.zeros(std.numel())
         emp_cost = []
-        coll_cost = []
-        goal_cost = []
         for i in range(self.cores):
             grad_mu += rd[i][0]
             grad_logvar += rd[i][1]
-            reg_grad_mu += rd[i][2]
-            reg_grad_logvar += rd[i][3]
 
             # torch.cat misbehaves when there is a 0-dim tensor, hence view
             emp_cost.extend(rd['costs'+str(i)].view(1,rd['costs'+str(i)].numel()))
-            coll_cost.extend(rd['coll_costs'+str(i)].view(1,rd['costs'+str(i)].numel()))
-            goal_cost.extend(rd['goal_costs'+str(i)].view(1,rd['costs'+str(i)].numel()))
 
         emp_cost = torch.cat(emp_cost)
-        goal_cost = torch.cat(goal_cost)
-        coll_cost = torch.cat(coll_cost)
 
-        # If computing across servers, only pass the cumulative sum, normalization
-        # will take place in the head_node
-        if self.multi_server:
-            return emp_cost, grad_mu, grad_logvar, coll_cost, goal_cost
-        else:
-            grad_mu /= self.num_trials
-            grad_logvar /= self.num_trials
-            emp_cost = emp_cost.sum()/self.num_trials
+        grad_mu /= self.num_trials
+        grad_logvar /= self.num_trials
+        emp_cost = emp_cost.sum()/self.num_trials
 
         return emp_cost, grad_mu, grad_logvar
 
@@ -121,13 +104,9 @@ class Compute_Loss:
         safecircle = params['safecircle']
         alpha = params['alpha']
         grad_method = params['grad_method']
-        # num_fit_frac = params['num_fit']
-        delta = params['delta']
-        num_trials = params['num_trials']
 
         from Simulator import Simulator
         from ES_grad import compute_grad_ES
-
 
         '''import pybullet results in printing "pybullet build time: XXXX" for
         each process. The code below suppresses printing these messages.
@@ -138,7 +117,7 @@ class Compute_Loss:
         os.dup2(null_fds[0], 1)
         os.dup2(null_fds[1], 2)
 
-        from Environment import TestEnvironment
+        from envs.Quad_Env import TestEnvironment
 
         # ENABLE PRINTING
         os.dup2(save[0], 1)
@@ -150,29 +129,12 @@ class Compute_Loss:
         policy_eval_costs = torch.zeros(num_policy_eval*2)
         grad_mu = torch.zeros(mu.numel())
         grad_logvar = torch.zeros(std.numel())
-        reg_grad_mu = torch.zeros(mu.numel())
-        reg_grad_logvar = torch.zeros(std.numel())
         batch_costs = torch.zeros(batch_size)
-        coll_costs = torch.zeros(num_policy_eval*2)
-        batch_coll_costs = torch.zeros(batch_size)
-        goal_costs = torch.zeros(num_policy_eval*2)
-        batch_goal_costs = torch.zeros(batch_size)
-        log_post_pr = torch.zeros(num_policy_eval*2)
-        pac_costs = torch.zeros(num_policy_eval*2)
 
-        logvar = std.pow(2).log()
-        kld = -0.5 * torch.sum(1 + logvar-logvar_pr - (mu-mu_pr).pow(2)/logvar_pr.exp() - (logvar-logvar_pr).exp())
-        
         for p in DepthFilter.parameters():
             p.data = torch.ones_like(p.data)
         DepthFilter = DepthFilter.to(device)
         
-        # ====================
-        # num_trials = 500
-        # ====================
-
-        reg = ((kld + torch.log(torch.Tensor([2*(num_trials**0.5)/delta]))) / (2*num_trials)).pow(0.5)
-
         env = TestEnvironment(r_lim, num_obs, safecircle=safecircle, parallel=True,
                           gui=False, y_max=y_max, y_min=y_min, x_min=x_min, x_max=x_max)
         sim = Simulator(comp_len=comp_len, prim_horizon=prim_horizon, alpha=alpha, 
@@ -213,37 +175,18 @@ class Compute_Loss:
                                                                           image_size=image_size)
 
                 policy_eval_costs[j] = torch.Tensor([cost])
-                coll_costs[j] = torch.Tensor([collision_cost])
-                goal_costs[j] = torch.Tensor([goal_cost])
-                log_post_pr[j] = torch.sum(0.5*(logvar_pr-logvar) + ((policy_params.to(torch.device('cpu'))-mu_pr).pow(2)/(2*logvar_pr.exp()))
-                               - ((policy_params.to(torch.device('cpu'))-mu).pow(2)/(2*logvar.exp())))
 
             batch_costs[i] = policy_eval_costs.mean()
-            batch_coll_costs[i] = coll_costs.mean()
-            batch_goal_costs[i] = goal_costs.mean()
 
-            # kld_grad_mu, kld_grad_logvar = compute_grad_ES(log_post_pr, epsilon, std, num_fit_frac, grad_method, 0)
-            
-            pac_costs = policy_eval_costs + log_post_pr/(4*num_trials*reg)
-            # reg_grad_logvar_temp = kld_grad_logvar / (4*num_trials*reg)
-            # ====================
-            # num_trials = params['num_trials']
-            # ====================
-            
             grad_mu_temp, grad_logvar_temp = compute_grad_ES(policy_eval_costs-policy_eval_costs.mean(), 
                                                              epsilon, std, 1, grad_method, 0)
                 
             grad_mu += grad_mu_temp
             grad_logvar += grad_logvar_temp
-            # reg_grad_mu += reg_grad_mu_temp
-            # reg_grad_logvar += reg_grad_logvar_temp
-
 
         # Gradient is computed for 1-loss, so return its negation as the true gradient
-        rd[proc_num] = [grad_mu, grad_logvar, reg_grad_mu, reg_grad_logvar]
+        rd[proc_num] = [grad_mu, grad_logvar]
 
         # Return the sum of all costs in the batch
         rd['costs'+str(proc_num)] = batch_costs
-        rd['coll_costs'+str(proc_num)] = batch_coll_costs
-        rd['goal_costs'+str(proc_num)] = batch_goal_costs
         env.p.disconnect()  # clean up instance

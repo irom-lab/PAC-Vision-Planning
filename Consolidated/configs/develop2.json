@@ -10,11 +10,11 @@
     "load_prior": false,
     "load_prior_from": "less_obs_large_roll",
     "load_weights": true,
-    "load_weights_from": "develop_current",
+    "load_weights_from": "develop2_current",
     "load_optimizer": true,
     "logging": true,
-    "save_file_v": "develop",
-    "itr_start": 3,
+    "save_file_v": "develop2",
+    "itr_start": 4,
     "start_seed": 100,
     "delta": 0.01,
     "time_step": 0.05,
@@ -36,6 +36,6 @@
     "y_min": 0,
     "x_min": -5,
     "x_max": 5,
-    "cost_min": 0.14407950639724731,
+    "cost_min": 0.12460251152515411,
     "reg_include": false
 }

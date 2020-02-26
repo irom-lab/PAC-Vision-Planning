@@ -3,6 +3,9 @@
 Minitaur/__pycache__/
 Quadrotor/__pycache__/
 Consolidated/__pycache__/
+Consolidated/envs/__pycache__/
+Consolidated/Parallelizer/__pycache__/
+Consolidated/policy/__pycache__/
 .DS_Store
 Quadrotor/runs/
 Minitaur/runs/
