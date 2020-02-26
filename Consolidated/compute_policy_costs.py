@@ -28,21 +28,12 @@ class compute_policy_costs:
         # Initialize
         self.example = args['example']
         self.num_trials = args['num_trials']
-        self.num_itr = args['num_itr']
         self.num_cpu = args['num_cpu']
         self.num_gpu = args['num_gpu']
-        self.lr_mu = args['lr_mu']
-        self.lr_logvar = args['lr_logvar']
-        self.itr_start = args['itr_start']
         self.start_seed = args['start_seed']
         self.save_file_v=args['save_file_v']
         self.delta = args['delta']
-        self.load_weights = args['load_weights']
-        self.load_weights_from = args['load_weights_from']
-        self.load_optimizer = args['load_optimizer']
-        self.load_prior = args['load_prior']
         self.load_prior_from = args['load_prior_from']
-        self.logging = args['logging']
         
         # import policy based on the example
         if self.example == 'quadrotor':
@@ -55,14 +46,14 @@ class compute_policy_costs:
         self.num_params = sum(p.numel() for p in self.policy.parameters())
         print('Number of Neural Network Parameters:', self.num_params)
 
-        # Establish prior
+        # Load prior
         self.mu_pr = torch.load('Weights/mu_'+str(self.load_prior_from)+'_best.pt')['0']
         self.logvar_pr = torch.load('Weights/logvar_'+str(self.load_prior_from)+'_best.pt')['0']
 
         self.mu = self.mu_pr
         self.logvar = self.logvar_pr
         
-    def opt(self):
+    def pac_bayes_opt(self):
 
         mu = self.mu
         logvar = self.logvar
@@ -72,20 +63,15 @@ class compute_policy_costs:
         start = time.time()
 
         # Compute costs for various runs
-        emp_cost, coll_cost, goal_cost, emp_cost_stack = para.compute(0,
-                                                                      self.params,
-                                                                      mu.clone().detach(),
-                                                                      (0.5*logvar).exp().clone().detach(),
-                                                                      self.mu_pr.clone().detach(),
-                                                                      self.logvar_pr.clone().detach(),
-                                                                      self.reg_include)
-            
+        emp_cost_stack = para.Compute_Cost_Matrix(0, self.params, mu.clone().detach(), (0.5*logvar).exp().clone().detach())
+
         print("Time:", time.time()-start)
-            
+
         C = emp_cost_stack.numpy()
+        print(C)
         np.save("Weights/C_"+self.save_file_v+".npy",C)
-        cost_policywise = emp_cost_stack.mean(dim=0)
-        print("Smallest cost:", cost_policywise.min().item())
+        # cost_policywise = emp_cost_stack.mean(dim=0)
+        # print("Smallest cost:", cost_policywise.min().item())
                 
         num_policy_eval = self.params['num_policy_eval']
         p0 = np.ones(num_policy_eval)/num_policy_eval

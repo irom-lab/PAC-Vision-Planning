@@ -144,9 +144,9 @@ def gen_path(x0, y0, z0, dx, dz, vy, T, steps):
     z_path: numpy array
     '''
     t = np.linspace(0, T, steps+1)
-    x_traj = x0 + dx*sigmoid((t-T/2)*6)
+    x_traj = x0 + dx*sigmoid((t-T/2)*6.5)
     y_traj = y0 + t*vy
-    z_traj = z0 + dz*sigmoid((t-T/2)*6)
+    z_traj = z0 + dz*sigmoid((t-T/2)*6.5)
     return x_traj[1:], y_traj[1:], z_traj[1:]
             
 def gen_end_points(x_min, x_max, z_min, z_max, num_x_points=5, num_z_points=5):
@@ -224,11 +224,11 @@ if __name__ == '__main__':
     print(prim_lib_y_traj[0,:])
     print(prim_lib_z_traj[0,:])
     
-    np.save('primitives/prim_lib_x_traj.npy', prim_lib_x_traj)
-    np.save('primitives/prim_lib_y_traj.npy', prim_lib_y_traj)
-    np.save('primitives/prim_lib_z_traj.npy', prim_lib_z_traj)
-    np.save('primitives/prim_lib_x_acc.npy', prim_lib_x_acc)
-    np.save('primitives/prim_lib_y_acc.npy', prim_lib_y_acc)
-    np.save('primitives/prim_lib_z_acc.npy', prim_lib_z_acc)
-    np.save('primitives/prim_lib_v.npy', prim_lib_v)
+    np.save('quad_primitive_lib/prim_lib_x_traj.npy', prim_lib_x_traj)
+    np.save('quad_primitive_lib/prim_lib_y_traj.npy', prim_lib_y_traj)
+    np.save('quad_primitive_lib/prim_lib_z_traj.npy', prim_lib_z_traj)
+    np.save('quad_primitive_lib/prim_lib_x_acc.npy', prim_lib_x_acc)
+    np.save('quad_primitive_lib/prim_lib_y_acc.npy', prim_lib_y_acc)
+    np.save('quad_primitive_lib/prim_lib_z_acc.npy', prim_lib_z_acc)
+    np.save('quad_primitive_lib/prim_lib_v.npy', prim_lib_v)
 
