@@ -1,31 +1,25 @@
 import cvxpy as cvx
 import scipy
 import numpy as np
-import time
 import sys
 import json
 import warnings
 warnings.filterwarnings('ignore')
 
-# Optimize PAC bound using Relative Entropy Programming
 def optimize_PAC_bound(costs_precomputed, p0, delta):
-    
+    '''Optimize McAllester (Maurer) PAC bound using Relative Entropy Programming'''    
     # Number of actions
     L = len(p0)
     
     # Number of environments
     m = np.shape(costs_precomputed)[0]
     
-    print("Envs:",m)
-    print("Actions:",L)
-    print("Cost before training:", (costs_precomputed @ p0).mean())
-    
     # Discretize lambdas
     lambdas = np.linspace(0,1,100)
     
     # Initialize vectors for storing optimal solutions
     taus = np.zeros(len(lambdas))
-    ps = len(lambdas)*[None]
+    ps = len(lambdas)*[p0]
 
     for k in range(len(lambdas)):
 
@@ -50,7 +44,8 @@ def optimize_PAC_bound(costs_precomputed, p0, delta):
         # Store optimal value and optimizer
         if (opt > 1.0):
             taus[k] = 1.0
-            ps[k] = p.value
+            if p.value is not None:
+                ps[k] = p.value
         else:        
             taus[k] = opt
             ps[k] = p.value
@@ -60,7 +55,6 @@ def optimize_PAC_bound(costs_precomputed, p0, delta):
     tau_opt = taus[min_ind]
     p_opt = ps[min_ind]
     new_emp_cost =  (costs_precomputed @ p_opt).mean()
-    print("Cost after training:", new_emp_cost)
     
     return tau_opt, p_opt, taus, new_emp_cost
 
@@ -74,12 +68,6 @@ def optimize_quad_PAC_bound_bisection(costs_precomputed, p0, delta):
     # Number of environments
     m = np.shape(costs_precomputed)[0]
     
-    print("Cost before training:", (costs_precomputed @ p0).mean())
-    
-    # Discretize lambdas
-    min_lambda = 0
-    max_lambda = 1
-    
     C_bar = (1/m)*(np.ones((1,m)) @ costs_precomputed)
     min_cost = np.min(C_bar)
     max_cost = np.max(C_bar)
@@ -89,22 +77,16 @@ def optimize_quad_PAC_bound_bisection(costs_precomputed, p0, delta):
     
     # Initialize vectors for storing optimal solutions
     tau_opt = ((C_bar@p0 + R_p0)**0.5 + R_p0**0.5)**2
-    print("PAC Cost of Prior:", tau_opt)
     p_opt = p0
-    # tau_opt = np.inf
-    # p_opt = [None]
     
     for j in range(len(L_hats)):
         terminate = False
         L_hat = L_hats[j]
-        # min_lambda0 = min_lambda
-        # max_lambda0 = max_lambda
         min_lambda0 = (L_hat*R_p0 + R_p0**2)**0.5
         max_lambda0 = (tau_opt - L_hat)/2 - R_p0
-        # print((L_hat,max_lambda0-min_lambda0))
         if min_lambda0 > max_lambda0:
-            # If this happens then it means that the prior gives a lower tau
-            # than the L_hat, lambda choices
+            # If this happens then the prior gives a lower tau than any valid 
+            # lambda choice
             terminate = True
         while not terminate:
             lambda0 = (min_lambda0 + max_lambda0)/2
@@ -139,18 +121,16 @@ def optimize_quad_PAC_bound_bisection(costs_precomputed, p0, delta):
                 terminate = True
     
             # Store optimal value and optimizer
-            if (opt < tau_opt):# and ~np.isinf(opt):
+            if (opt < tau_opt):
                 tau_opt = opt
                 p_opt = p.value
     
     new_emp_cost = (costs_precomputed @ p_opt).mean()
-    print("Cost after training:", new_emp_cost)
     
     return tau_opt, p_opt, new_emp_cost
 
-# Compute kl inverse using Relative Entropy Programming
 def kl_inverse(q, c):
-    
+    '''Compute kl inverse using Relative Entropy Programming'''    
     p_bernoulli = cvx.Variable(2)
 
     q_bernoulli = np.array([q,1-q])
@@ -160,31 +140,33 @@ def kl_inverse(q, c):
     prob = cvx.Problem(cvx.Maximize(p_bernoulli[0]), constraints)
 
     # Solve problem
-    opt = prob.solve(verbose=False, solver=cvx.MOSEK) # solver=cvx.ECOS
+    prob.solve(verbose=False, solver=cvx.MOSEK) # solver=cvx.ECOS
     
     return p_bernoulli.value[0] 
     
 
 if __name__ == "__main__":
     
-    # params = {}
-    # params = json.load(open(sys.argv[1]))
+    params = {}
+    params = json.load(open(sys.argv[1]))
+    delta = params['delta']
     
-    # save_file_v = params['save_file_v']
+    save_file_v = params['save_file_v']
+    example = params['example']
     
-    # save_file_v = sys.argv[1]
-    num_trials = int(sys.argv[1])
-    num_actions = int(sys.argv[2])
+    C = np.load("Weights/C_"+save_file_v+".npy")
     
-    C = np.load("Weights/C_pac_4000env_50pol.npy")
-    C_emp = np.load("Weights/C_emp_test_5000env_50pol.npy")
+    num_trials = C.shape[0]
+    num_actions = C.shape[1]
+    
+    if len(sys.argv)>2:
+        num_trials = int(sys.argv[2])
+        num_actions = int(sys.argv[3])
+        
+    C_emp = np.load("Weights/C_"+example+"_emp_test.npy")
     
     C = C[:num_trials,:num_actions]
     C_emp = C_emp[:,:num_actions]
-    
-    # num_actions = C.shape[1]
-    # num_trials = C.shape[0]
-    delta = 0.01
     
     p0 = np.ones(num_actions)/num_actions
 
@@ -192,32 +174,25 @@ if __name__ == "__main__":
     print('    Mc Allester Opt     ')
     print('========================')
     tau_opt, p_opt, taus, new_emp_cost = optimize_PAC_bound(C, p0, delta)
-    print("PAC Bound:", tau_opt)
-    print("New Emp Cost:", new_emp_cost)
+    print("McAllester PAC Bound:", tau_opt)
+    print("New Emp Cost on Train Data:", new_emp_cost)
     r = (np.sum(scipy.special.kl_div(p_opt, p0)) + np.log(2*np.sqrt(num_trials)/delta))/(2*num_trials)
     print("R:",r)
     pac_bound = kl_inverse(new_emp_cost, 2*r)
-    # np.save("Weights/p_"+save_file_v+".npy", p_opt)
-    
     print("KL-inv PAC bound:", pac_bound)
-    print("Empirical Cost:", (C_emp @ p_opt).mean()) 
+    print("True Cost Estimate:", (C_emp @ p_opt).mean()) 
     
-    start = time.time()
     print('========================')
     print('        Quad Opt        ')
     print('========================')
     tau_opt, p_opt, new_emp_cost = optimize_quad_PAC_bound_bisection(C, p0, delta)
     print("Quad PAC Bound:", tau_opt)
-    print("New Emp Cost:", new_emp_cost)
+    print("New Emp Cost on Train Data:", new_emp_cost)
     r = (np.sum(scipy.special.kl_div(p_opt, p0)) + np.log(2*np.sqrt(num_trials)/delta))/(2*num_trials)
     print("R:",r)
-    pac_bound = new_emp_cost + r**0.5
-    print("McAllester:", pac_bound)
     quad_pac_bound = kl_inverse(new_emp_cost, 2*r)
     print("KL-inv PAC bound:", quad_pac_bound)
-    print("Empirical Cost:", (C_emp @ p_opt).mean()) 
+    print("True Cost Estimate:", (C_emp @ p_opt).mean()) 
 
-    print("Time:", time.time()-start)
-
-    # if quad_pac_bound < pac_bound:
-    #     np.save("Weights/p_"+save_file_v+".npy", p_opt)
+    if quad_pac_bound < pac_bound:
+        np.save("Weights/p_"+save_file_v+".npy", p_opt)
