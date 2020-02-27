@@ -24,7 +24,7 @@ This repository contains code for the results in: [Probably Approximately Correc
    - Quadrotor: ```python train_ES.py --config_file configs/config_quadrotor.json```
    - Minitaur: ```python train_ES.py --config_file configs/config_minitaur.json```
 
-**Note:** Training with ES is computationally demanding. As an example, the quadrotor was trained on 480 environments (seeds:100-579) on an AWS g3.16xlarge instance with 60 CPU workers and 4 GPUs, while the Minitaur was trained on 10 environments (seeds:0-9) with 10 CPU workers and 1 GPU (Titan XP, 12 GB). For your convenience, we have shared the trained prior used in the paper, so this step can be skipped. Running the relevant config file will automatically load the relevant weights from the Weights folder.
+**Note:** Training the prior is computationally demanding. The quadrotor was trained on 480 environments (seeds:100-579) on an AWS g3.16xlarge instance with 60 CPU workers and 4 GPUs, while the Minitaur was trained on 10 environments (seeds:0-9) with 10 CPU workers and 1 GPU (Titan XP, 12 GB). For your convenience, we have shared the trained prior used in the paper, so this step can be skipped. Running the relevant config file will automatically load the relevant weights from the Weights folder.
 
 2. Draw a `m` policies i.i.d. from the prior above and compute the cost for each policy on `N` new environments:
    - Quadrotor: ```python compute_policy_costs.py --config_file configs/quadrotor.json --start_seed 580 --num_envs N --num_policies m```
