@@ -1,18 +1,11 @@
 # Don't track the following folders
 .idea/
-Minitaur/__pycache__/
-Quadrotor/__pycache__/
-Consolidated/__pycache__/
-Consolidated/envs/__pycache__/
-Consolidated/Parallelizer/__pycache__/
-Consolidated/policy/__pycache__/
+__pycache__/
+envs/__pycache__/
+policy/__pycache__/
+utils/__pycache__/
 .DS_Store
-Quadrotor/runs/
-Minitaur/runs/
-Consolidated/runs/
-run_backup/
-Quadrotor/optim_state/
-Minitaur/optim_state/
-Consolidated/optim_state/
+runs/
+optim_state/
 *.avi
 *.mp4
