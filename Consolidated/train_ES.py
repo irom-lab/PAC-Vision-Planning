@@ -20,8 +20,12 @@ warnings.filterwarnings('ignore')
 
 class train:
 
-    def __init__(self, args):
+    def __init__(self, config_file):
 
+        # Load the dictionary from the json file
+        self.config_file = config_file
+        args = json.load(open(self.config_file))
+        
         # Make a copy of the args for ease of passing
         self.params = args
 
@@ -91,13 +95,13 @@ class train:
                                                            'Logvar Step':logvar_step_size}, itr)
         
         # Log updates to the config file
-        state_dict = json.load(open(sys.argv[1]))
+        state_dict = json.load(open(self.config_file))
         state_dict['itr_start'] = itr+1
         state_dict['load_weights'] = True
         state_dict['load_optimizer'] = True
         state_dict['load_weights_from'] = self.save_file_v+'_current'
         state_dict['cost_min'] = cost_min
-        json.dump(state_dict, open(sys.argv[1], 'w'), indent=4)
+        json.dump(state_dict, open(self.config_file, 'w'), indent=4)
 
     def opt(self):
 
@@ -176,8 +180,20 @@ class train:
 
 if __name__ == "__main__":
 
-    args={}
-    args = json.load(open(sys.argv[1]))
+    import argparse
 
-    train1 = train(args)
+    def collect_as(coll_type):
+        class Collect_as(argparse.Action):
+            def __call__(self, parser, namespace, values, options_string=None):
+                setattr(namespace, self.dest, coll_type(values))
+        return Collect_as
+
+    parser = argparse.ArgumentParser(description='PAC-Bayes Optimization')
+    parser.add_argument('--config_file', type=str)
+
+    arg_con = parser.parse_args()
+
+    config_file = arg_con.config_file
+
+    train1 = train(config_file)
     train1.opt()

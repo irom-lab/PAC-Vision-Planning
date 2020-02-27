@@ -147,22 +147,35 @@ def kl_inverse(q, c):
 
 if __name__ == "__main__":
     
-    params = {}
-    params = json.load(open(sys.argv[1]))
-    delta = params['delta']
+    import argparse
+
+    def collect_as(coll_type):
+        class Collect_as(argparse.Action):
+            def __call__(self, parser, namespace, values, options_string=None):
+                setattr(namespace, self.dest, coll_type(values))
+        return Collect_as
+
+    parser = argparse.ArgumentParser(description='PAC-Bayes Optimization')
+    parser.add_argument('--config_file', type=str)
+    parser.add_argument('--num_envs', type=int, default=-1)
+    parser.add_argument('--num_policies', type=int, default=-1)
     
+    args = parser.parse_args()
+    
+    params = json.load(open(args.config_file))
+    num_trials = args.num_envs
+    num_actions = args.num_policies
+    
+    delta = params['delta']
     save_file_v = params['save_file_v']
     example = params['example']
     
     C = np.load("Weights/C_"+save_file_v+".npy")
     
-    num_trials = C.shape[0]
-    num_actions = C.shape[1]
+    if num_trials == -1:
+        num_trials = C.shape[0]
+        num_actions = C.shape[1]
     
-    if len(sys.argv)>2:
-        num_trials = int(sys.argv[2])
-        num_actions = int(sys.argv[3])
-        
     C_emp = np.load("Weights/C_"+example+"_emp_test.npy")
     
     C = C[:num_trials,:num_actions]

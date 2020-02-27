@@ -61,7 +61,25 @@ def compute_policy_costs(args):
 
 if __name__ == "__main__":
 
-    args={}
-    args = json.load(open(sys.argv[1]))
+    import argparse
 
+    def collect_as(coll_type):
+        class Collect_as(argparse.Action):
+            def __call__(self, parser, namespace, values, options_string=None):
+                setattr(namespace, self.dest, coll_type(values))
+        return Collect_as
+
+    parser = argparse.ArgumentParser(description='Compute Cost Matrix')
+    parser.add_argument('--config_file', type=str)
+    parser.add_argument('--start_seed', type=int, default=0)
+    parser.add_argument('--num_envs', type=int, default=100)
+    parser.add_argument('--num_policies', type=int, default=50)
+
+    args_con = parser.parse_args()
+    args = json.load(open(args_con.config_file))
+
+    args['start_seed'] = args_con.start_seed
+    args['num_trials'] = args_con.num_envs
+    args['num_policy_eval'] = args_con.num_policies
+    
     compute_policy_costs(args)
