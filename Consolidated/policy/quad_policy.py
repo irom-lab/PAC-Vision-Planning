@@ -36,8 +36,6 @@ class Policy(nn.Module):
         depth_feat = self.conv(depth)
         depth_feat = depth_feat.view(depth_feat.shape[0],-1)
         pd = 1e3 * self.output(depth_feat)
-        # depth_state_aug = torch.cat([depth_feat, x], dim=1)
-        # pd = self.output(depth_state_aug)
 
         return pd
     
@@ -58,7 +56,6 @@ class Filter(nn.Module):
                                             padding=0,
                                             bias=False))
         self.kernel_size = 5
-                                  # nn.Softmax())
         
     def forward(self, depth):
         depth_filtered = self.conv(depth[:,:,9:34,13:38])/(self.kernel_size**2)
@@ -73,14 +70,3 @@ def load_policy(policy, policy_params):
         count+=num_params_p
 
     return policy
-
-if __name__ == "__main__":
-
-    policy = Policy()
-    num_params = sum(p.numel() for p in policy.parameters())
-    policy_params = torch.rand((num_params,))
-    print(policy_params.shape)
-    # Note: policy is a mutable object, sample(policy,0,0) would work as well
-    policy = load_policy(policy, policy_params)
-
-

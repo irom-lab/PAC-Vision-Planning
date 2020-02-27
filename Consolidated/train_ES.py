@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 import json
 import sys
 from Parallelizer import Compute_Loss
-from visualize import weight_spread
+from utils.visualize import weight_spread
 warnings.filterwarnings('ignore')
 
 class train:

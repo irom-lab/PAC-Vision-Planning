@@ -373,7 +373,7 @@ class Simulator:
             
             angle = max([angle_fl, angle_fr, angle_bl, angle_br])
             
-            # self.plot_traj(env.p, traj)
+            self.plot_traj(env.p, traj)
             # self.plot_traj(env.p, traj_fr)
             # self.plot_traj(env.p, traj_fl)
             # self.plot_traj(env.p, traj_br)
@@ -386,14 +386,14 @@ class Simulator:
             
         print("Maximum angle of primitive "+str(prim)+": ", angle)
         
-        sphere = env.p.loadURDF("./URDFs/Sphere/sphere2red.urdf", 
-                                basePosition=state,
-                                baseOrientation=env.p.getQuaternionFromEuler([0., 0., np.pi/4]),
-                                useFixedBase=1,
-                                globalScaling=0.2)  # Load robot from URDF
-        env.p.changeVisualShape(sphere, -1, rgbaColor=[0.54, 0.27, 0.07, 1])
+        # sphere = env.p.loadURDF("./URDFs/Sphere/sphere2red.urdf", 
+        #                         basePosition=state,
+        #                         baseOrientation=env.p.getQuaternionFromEuler([0., 0., np.pi/4]),
+        #                         useFixedBase=1,
+        #                         globalScaling=0.2)  # Load robot from URDF
+        # env.p.changeVisualShape(sphere, -1, rgbaColor=[0.54, 0.27, 0.07, 1])
 
-        rgb, depth = self.mount_cam(env, init_state, quat, h=image_size*10, w=image_size*10)
+        rgb, depth = self.mount_cam(env, init_state, quat, h=image_size, w=image_size)
 
 
         # visIdxs = env.p.createVisualShape(env.p.GEOM_SPHERE,
