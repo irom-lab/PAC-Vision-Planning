@@ -38,4 +38,10 @@ This repository contains code for the results in: [Probably Approximately Correc
 Additionally, we provide the matrices `Weights/C_quadrotor_emp_test.npy` and `Weights/C_minitaur_emp_test.npy` on 5000 environments (seeds:5000-9999) and 50 policies each to emprically estimate the true cost of the posterior.
 
 
+### Running test scripts:
+To run the trained posterior on environments from seeds `N0` to `N0+N`:
+- Quadrotor: ```python quad_test.py --config_file configs/config_quadrotor.json --start_seed N0 --num_envs N```
+- Minitaur: ```python minitaur_test.py --config_file configs/config_minitaur.json --start_seed N0 --num_envs N```
+
+
 
