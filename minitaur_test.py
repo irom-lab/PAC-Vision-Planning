@@ -79,19 +79,27 @@ def test(params, policy, device, mu, std, posterior, seed):
 
 if __name__ == "__main__":
 
-    params = {}
-    params = json.load(open(sys.argv[1]))
+    import argparse
+
+    def collect_as(coll_type):
+        class Collect_as(argparse.Action):
+            def __call__(self, parser, namespace, values, options_string=None):
+                setattr(namespace, self.dest, coll_type(values))
+        return Collect_as
+
+    parser = argparse.ArgumentParser(description='PAC-Bayes Optimization')
+    parser.add_argument('--config_file', type=str)
+    parser.add_argument('--start_seed', type=int, default=10000)
+    parser.add_argument('--num_envs', type=int, default=1)
+    args = parser.parse_args()
+
+    env_num_start = args.start_seed
+    num_envs = args.num_envs
+
+    params = json.load(open(args.config_file))
     params['num_policy_eval'] = 1
     save_file_v = params['save_file_v']
     load_prior_from = params['load_prior_from']
-    
-    if len(sys.argv) > 2:
-        env_num_start = int(sys.argv[2])
-        num_envs = int(sys.argv[3])
-    else:
-        num_envs = params['num_trials']
-        env_num_start = params['start_seed']
-
     
     device = torch.device("cuda")
 
