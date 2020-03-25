@@ -1,10 +1,12 @@
 # PAC-Vision-Planning
 
-This repository contains code for the results in: [Probably Approximately Correct Vision-Based Planning using Motion Primitives](https://irom-lab.princeton.edu/wp-content/uploads/2020/02/Veer.PACBayes.pdf)
+This repository contains code for the results in: [Probably Approximately Correct Vision-Based Planning using Motion Primitives](https://arxiv.org/abs/2002.12852)
 
 ### Examples in the code:
 1. Quadrotor navigating an obstacle field using a depth map from an onboard RGB-D camera
 2. Quadruped (Minitaur, Ghost Robotics) traversing rough terrain using proprioceptive and exteroceptive (depth map from onboard RGB-D camera) feedback
+
+The results are demonstrated in this [video](https://youtu.be/03qq4sLU34o) on a few test environments. 
 
 ### Dependencies:
 1. PyBullet
