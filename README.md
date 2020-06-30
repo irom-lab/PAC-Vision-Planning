@@ -28,7 +28,7 @@ The results are demonstrated in this [video](https://youtu.be/03qq4sLU34o) on a 
 **Note:** Training the prior is computationally demanding. The quadrotor was trained on 480 environments (seeds:100-579) on an AWS g3.16xlarge instance with 60 CPU workers and 4 GPUs, while the Minitaur was trained on 10 environments (seeds:0-9) with 10 CPU workers and 1 GPU (Titan XP, 12 GB). For your convenience, we have shared the prior trained for the results in the paper, so this step can be skipped. Running the relevant config file will automatically load the relevant weights from the Weights folder.
 
 2. Draw `m` policies i.i.d. from the prior trained above and compute the cost for each policy on `N` new environments:
-   - Quadrotor: ```python compute_policy_costs.py --config_file configs/quadrotor.json --start_seed 580 --num_envs N --num_policies m```
+   - Quadrotor: ```python compute_policy_costs.py --config_file configs/config_quadrotor.json --start_seed 580 --num_envs N --num_policies m```
    - Minitaur: ```python compute_policy_costs.py --config_file configs/config_minitaur.json --start_seed 10 --num_envs N --num_policies m```
 
 **Note:** We have shared the computed cost matrix with 4000 environments, 50 policies for the quadrotor and 2000 environments, 50 policies for the Minitaur; see `Weights/C_quadrotor.npy` and `Weights/C_minitaur.npy`
