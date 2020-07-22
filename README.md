@@ -9,7 +9,7 @@ This repository contains code for the results in: [Probably Approximately Correc
 The results are demonstrated in this [video](https://youtu.be/03qq4sLU34o) on a few test environments. 
 
 ### Dependencies:
-1. PyBullet
+1. PyBullet==2.6.5 (`pip install pybullet==2.6.5`)
 2. PyTorch
 3. Tensorboard
 4. CVXPY
