@@ -11,9 +11,6 @@ import json
 import warnings
 from envs.Minitaur_Env import Environment 
 import numpy as np
-import os
-import sys
-import time
 warnings.filterwarnings('ignore')
 
 def test(params, policy, device, mu, std, posterior, seed):
@@ -32,10 +29,8 @@ def test(params, policy, device, mu, std, posterior, seed):
         
         torch.manual_seed(0)
         epsilon = torch.randn((num_policies, mu.numel()))
-        # epsilon = torch.cat([epsilon, -epsilon], dim=0)
 
         env = Environment(max_angle, gui=True)
-        
         env.goal = goal
         
         np.random.seed(int(2 ** 32 * np.random.random_sample()))

@@ -13,7 +13,6 @@ import warnings
 from envs.Quad_Simulator import Simulator
 from envs.Quad_Env import Environment
 import numpy as np
-import sys
 warnings.filterwarnings('ignore')
 
 def test(params, policy, DepthFilter, device, mu, std, posterior, seed):
@@ -41,6 +40,9 @@ def test(params, policy, DepthFilter, device, mu, std, posterior, seed):
         sim = Simulator(comp_len=comp_len, prim_horizon=prim_horizon, alpha=alpha,
                         dt=time_step, t_horizon=t_horizon, device=device)
         batch_costs = torch.zeros(num_policy_eval)
+        
+        # PAC-Bayes performed with policies generated with seed=0
+        torch.manual_seed(0)
         epsilon = torch.randn((num_policies, mu.numel()))
 
         # Unlike parallelizer we do not need to reset the robot because we only
@@ -68,7 +70,7 @@ def test(params, policy, DepthFilter, device, mu, std, posterior, seed):
 
             cost, collision_cost, goal_cost = sim.simulate_controller(env, policy, DepthFilter, gen_new_env=False, rem_old_env=False,
                                                                       RealTimeSim=True, image_size=image_size, plot_line=True,
-                                                                        record_vid=False, vid_num=seed)
+                                                                      record_vid=False, vid_num=seed)
 
             if collision_cost == 0:
                 collision_flag = 1

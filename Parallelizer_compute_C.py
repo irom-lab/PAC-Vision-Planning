@@ -55,13 +55,7 @@ class Compute_Cost_Matrix:
 
         for j in range(self.cores):
             
-            # Generate seeds at random with no regard to repeatability
-            # torch_seed = [self.new_seed() for i in range(batch[j])]
-            
-            # Generate the same seeds for every instance of training for comparison
-            # of hyperparameters; the seeds differ with the iteration number.
-            torch_seed = list(range(itr_num*self.num_trials + torch_pos, 
-                                    itr_num*self.num_trials + torch_pos + batch[j]))
+            torch_seed = 0
 
             # Fixing the np_seed fixes the enviroment
             np_seed = list(range(pos,pos+batch[j]))
@@ -150,7 +144,7 @@ class Compute_Cost_Matrix:
 
         # Generate epsilons in here and compute multiple runs for the same environment
         for i in range(batch_size):
-            torch.manual_seed(torch_seed[i])
+            torch.manual_seed(torch_seed)
             epsilon = torch.randn((num_policy_eval, mu.numel()))
             if i>0:
                 env.p.removeBody(env.obsUid)
@@ -223,7 +217,7 @@ class Compute_Cost_Matrix:
 
         # Generate epsilons in here and compute multiple runs for the same environment
         for i in range(batch_size):
-            torch.manual_seed(torch_seed[i])
+            torch.manual_seed(torch_seed)
             epsilon = torch.randn((num_policy_eval, mu.numel()))
             if i>0:
                 env.p.removeBody(env.terrain)

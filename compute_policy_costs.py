@@ -11,7 +11,6 @@ import time
 import torch
 import numpy as np
 import json
-import sys
 from Parallelizer_compute_C import Compute_Cost_Matrix
 warnings.filterwarnings('ignore')
 
