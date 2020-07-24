@@ -215,21 +215,29 @@ class Compute_Cost_Matrix:
 
         env = Environment(max_angle=max_angle, gui=False)
 
-        # Generate epsilons in here and compute multiple runs for the same environment
+        torch.manual_seed(torch_seed)
+        epsilon = torch.randn((num_policy_eval, mu.numel()))
+        # if proc_num==0:
+        #     print(epsilon)
+        #     print(std)
+        
+        total_rollouts = batch_size * num_policy_eval
+
         for i in range(batch_size):
-            torch.manual_seed(torch_seed)
-            epsilon = torch.randn((num_policy_eval, mu.numel()))
             if i>0:
                 env.p.removeBody(env.terrain)
             env.goal = goal
             np.random.seed(np_seed[i])
             env.terrain = env.generate_steps()
+            
+            print("Process: {}, Done: {}%".format(proc_num, (i*num_policy_eval*100)/total_rollouts))
 
             for j in range(num_policy_eval):
                 # reset the robot back to starting point after each trial
+                env.minitaur_env.seed(np_seed[i])
                 env.minitaur_env.reset()
                 policy_params = mu + std*epsilon[j,:]
-
+                # print(policy_params)
                 policy_params = policy_params.to(device)
 
                 # LOAD POLICY_PARAMS
@@ -238,8 +246,8 @@ class Compute_Cost_Matrix:
                     num_params_p = p.data.numel()
                     p.data = policy_params[count:count+num_params_p].view(p.data.shape)
                     count+=num_params_p
-
-                cost, collision_cost, goal_cost, _ = env.execute_policy(policy,
+                    
+                cost, fall_cost, goal_cost, end_position = env.execute_policy(policy,
                                                                      env.goal,
                                                                      alpha,
                                                                      time_step=time_step,
@@ -247,7 +255,6 @@ class Compute_Cost_Matrix:
                                                                      prim_horizon=prim_horizon,
                                                                      image_size=image_size,
                                                                      device=device)
-                
                 policy_eval_costs[j] = torch.Tensor([cost])
 
             all_emp_costs[i] = policy_eval_costs
