@@ -30,7 +30,7 @@
     "comp_len": 20,
     "max_angle": 35,
     "_comment": "alpha is the convex combination factor between collision and goal cost",
-    "alpha": 0.2,
+    "alpha": 0,
     "delta": 0.01,
     "cost_min": 0.6543172001838684,
     "load_prior": false
