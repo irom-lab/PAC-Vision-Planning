@@ -45,7 +45,6 @@ class Environment:
 
         if self.parallel:
             if self.gui:
-                print("Warning: Can only have one thread be a gui")
                 p = bc.BulletClient(connection_mode=pybullet.GUI)
             else:
                 p = bc.BulletClient(connection_mode=pybullet.DIRECT)
