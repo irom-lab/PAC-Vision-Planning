@@ -79,6 +79,10 @@ def test(params, policy, DepthFilter, device, mu, std, posterior, seed):
             policy_eval_costs[j] = torch.Tensor([cost])
 
             batch_costs[j] = torch.Tensor([cost])
+            
+            print('Evaluation: {} | Cost: {:.3f}, Goal Cost: {:.3f}, Coll Cost: {:.3f}'
+                  .format(j, cost, goal_cost, collision_cost))
+        print("Average Cost for the Environment:", batch_costs.mean().item())
         env.p.disconnect()  # clean up instance
         return batch_costs, collision_flag, collision_counter
 
@@ -96,13 +100,14 @@ if __name__ == "__main__":
     parser.add_argument('--config_file', type=str)
     parser.add_argument('--start_seed', type=int, default=10000)
     parser.add_argument('--num_envs', type=int, default=1)
+    parser.add_argument('--num_policies', type=int, default=5)
     args = parser.parse_args()
 
     env_num_start = args.start_seed
     num_envs = args.num_envs
 
     params = json.load(open(args.config_file))
-    params['num_policy_eval'] = 1
+    params['num_policy_eval'] = args.num_policies
     save_file_v = params['save_file_v']
     load_prior_from = params['load_prior_from']
     
@@ -137,6 +142,5 @@ if __name__ == "__main__":
         print("==============")
         cost, collision_flag, collision_counter = test(params, policy, DepthFilter, device, mu, std, posterior, i)
         total_cost += cost.mean()
-        print("Env Num:", i+1)
-        print("Emp Cost So Far:", total_cost.item()/(i-env_num_start+1))
+        print("Average Cost:", total_cost.item()/(i-env_num_start+1))
     print('Emp_cost:', total_cost.item()/num_envs)

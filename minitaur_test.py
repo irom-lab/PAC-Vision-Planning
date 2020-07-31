@@ -65,7 +65,7 @@ def test(params, policy, device, mu, std, posterior, seed):
                                                             record_vid=False,
                                                             vid_num=seed)
 
-            print('Evaluation: {} | Cost: {:.3f}, Goal Cost: {:.3f}, Coll Cost: {:.3f}, End Position: {:.3f}'
+            print('Evaluation: {} | Cost: {:.3f}, Goal Cost: {:.3f}, Fall Cost: {:.3f}, End Position: {:.3f}'
                   .format(j, cost, goal_cost, fall_cost, end_position))
             batch_costs[j] = torch.Tensor([cost])
         print("Average Cost for the Environment:", batch_costs.mean().item())
@@ -86,13 +86,14 @@ if __name__ == "__main__":
     parser.add_argument('--config_file', type=str)
     parser.add_argument('--start_seed', type=int, default=10000)
     parser.add_argument('--num_envs', type=int, default=1)
+    parser.add_argument('--num_policies', type=int, default=5)
     args = parser.parse_args()
 
     env_num_start = args.start_seed
     num_envs = args.num_envs
 
     params = json.load(open(args.config_file))
-    params['num_policy_eval'] = 1
+    params['num_policy_eval'] = args.num_policies
     save_file_v = params['save_file_v']
     load_prior_from = params['load_prior_from']
     
