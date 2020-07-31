@@ -41,9 +41,9 @@ Additionally, we provide the matrices `Weights/C_quadrotor_emp_test.npy` and `We
 
 
 ### Running test scripts:
-To run the trained posterior on environments from seeds `N0` to `N0+N` for `m_test` policy draws from the posterior:
-- Quadrotor: ```python quad_test.py --config_file configs/config_quadrotor.json --start_seed N0 --num_envs N --num_policies m_test```
-- Minitaur: ```python minitaur_test.py --config_file configs/config_minitaur.json --start_seed N0 --num_envs N --num_policies m_test```
+To visualize the trained posterior for `m_test` policy draws per environment on environments from `N0` (default `10000`) to `N0+N`:
+- Quadrotor: ```python quad_test.py --config_file configs/config_quadrotor.json --start_seed N0 --num_envs N --num_draws m_test```
+- Minitaur: ```python minitaur_test.py --config_file configs/config_minitaur.json --start_seed N0 --num_envs N --num_draws m_test```
 
 **Note:** Choose `m_test` sufficiently large; at least 5
 
